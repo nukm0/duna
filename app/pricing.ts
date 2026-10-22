@@ -1,0 +1,2 @@
+const city=(s:string)=>s.toLowerCase().trim().replace(/ё/g,'е').replace(/[.\s-]/g,'').replace(/^спб$/,'санктпетербург');
+export function calculate(km:number,from:string,to:string){const a=city(from),b=city(to);const discount=(a==='мурманск'&&['петрозаводск','санктпетербург','москва'].includes(b))||(a==='петрозаводск'&&['санктпетербург','москва'].includes(b));const rate=km<=40?150:km<=100?102:km<=150?72:km<=300?66:54;const base=Math.max(3000,Math.round(km*rate));return {rate,base,discount,total:Math.round(base*(discount?0.7:1))};}
