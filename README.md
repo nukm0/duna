@@ -17,7 +17,7 @@ pnpm dev
 pnpm build
 ```
 
-Проект использует React и Vinext, серверная часть рассчитана на Cloudflare Workers / Sites. GitHub Pages не выполняет обработчик почты.
+Проект использует React, TypeScript и Next.js. Серверная часть заявки работает в Node.js на Vercel. GitHub Pages не выполняет обработчик почты.
 
 ## Почта
 
@@ -42,3 +42,15 @@ pnpm build
 - Стоимость предварительная. Данные компании и получатель писем еще не предоставлены.
 
 Основная формула: `app/pricing.ts`. Обработчик заявки: `app/api/request/route.ts`.
+
+## Развертывание в Vercel
+
+1. В Vercel выберите Add New → Project и импортируйте репозиторий nukm0/duna.
+2. Framework Preset: Next.js; Root Directory: корень репозитория. Build Command: pnpm build. Output Directory: автоматический.
+3. В Settings → Environment Variables добавьте RESEND_API_KEY, ORDER_EMAIL, MAIL_FROM для Production (и Preview, если там нужна отправка).
+4. Нажмите Deploy; после изменения переменных выполните Redeploy.
+5. Откройте сайт, выполните расчет и отправьте тестовую заявку. Проверьте письмо в ящике получателя и журнал Resend.
+
+Локально значения переменных можно хранить в .env.local (не отслеживается Git).
+
+Прежние файлы запуска Sites/Cloudflare сохранены как вспомогательные; основной запуск и сборка теперь используют Next.js.
