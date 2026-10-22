@@ -36,3 +36,5 @@ html{background:#180c2d}body{background:#1b0e31;color:#eee6fa;isolation:isolate}
 
 /* Truck photograph in delivery type card. */
 .delivery-choice .choice-heading{position:relative;min-height:76px;align-items:flex-start}.choice-truck-photo{display:block;width:calc(100% - 18px);height:86px;margin:-5px 0 -5px -5px}.choice-truck-photo img{display:block;width:100%;height:100%;object-fit:contain;object-position:left center;filter:drop-shadow(0 6px 7px #210c3f30)}.delivery-choice .selection-dot{flex-shrink:0}.delivery-choice.active .choice-truck-photo img{filter:drop-shadow(0 6px 8px #26094755)}@media(max-width:430px){.choice-truck-photo{height:74px;width:calc(100% - 12px)}.delivery-choice .choice-heading{min-height:68px}}
+
+.choice-freight-photo img{object-position:left center}
