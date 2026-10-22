@@ -38,3 +38,30 @@ html{background:#180c2d}body{background:#1b0e31;color:#eee6fa;isolation:isolate}
 .delivery-choice .choice-heading{position:relative;min-height:76px;align-items:flex-start}.choice-truck-photo{display:block;width:calc(100% - 18px);height:86px;margin:-5px 0 -5px -5px}.choice-truck-photo img{display:block;width:100%;height:100%;object-fit:contain;object-position:left center;filter:drop-shadow(0 6px 7px #210c3f30)}.delivery-choice .selection-dot{flex-shrink:0}.delivery-choice.active .choice-truck-photo img{filter:drop-shadow(0 6px 8px #26094755)}@media(max-width:430px){.choice-truck-photo{height:74px;width:calc(100% - 12px)}.delivery-choice .choice-heading{min-height:68px}}
 
 .choice-freight-photo img{object-position:left center}
+/* Purple surfaces and selection-only neon lighting. */
+.calc-fields{background:radial-gradient(ellipse at 100% 0%,#7b258a55,transparent 60%),linear-gradient(145deg,#351344,#231033);border-color:#8e4ca066;color:#f7e9ff}
+.calc-fields .hint,.vehicle-picker>.hint,.truck-selector-heading p,.freight-step-heading p{color:#c6a7d4!important}
+.vehicle-picker>#vehicle-label,.truck-selector-heading h3,.freight-step-heading h3,.route-step-heading h3,.configuration-heading h3{color:#f7e9ff!important}
+.delivery-choice,.truck-card,.truck-card:nth-child(even),.truck-option-column button,.cargo-tabs button{background:linear-gradient(140deg,#592367,#35163f);border:1px solid #8a4c9a88;color:#dcbce8;box-shadow:none;transition:background .2s,border-color .2s,box-shadow .2s,transform .2s}
+.delivery-choice b,.delivery-choice .choice-description,.delivery-choice .choice-state,.truck-card b,.truck-card small,.truck-option-column h4{color:#e6c8f2}
+.delivery-choice .selection-dot{background:#2e123e;border-color:#a875b6;color:#dcbce8}
+.delivery-choice.active,.delivery-choice.active:hover,.truck-card.chosen,.truck-card.chosen:hover,.truck-option-column button[aria-pressed=true],.cargo-tabs button[aria-pressed=true],.unit-switch button[aria-pressed=true]{background:linear-gradient(125deg,#9917da,#c52ee0);border-color:#ef9aff;color:#fff;box-shadow:0 0 0 1px #e679ff66,inset 0 0 18px #f099ff24,0 0 20px #d52bfc60,0 7px 22px #19032150}
+.delivery-choice:not(.active):hover,.truck-card:not(.chosen):hover,.truck-option-column button:not([aria-pressed=true]):hover,.cargo-tabs button:not([aria-pressed=true]):hover{background:linear-gradient(140deg,#682d77,#45204f);border-color:#c287d1;box-shadow:none}
+.delivery-choice:focus-visible,.truck-card:focus-visible,.truck-option-column button:focus-visible,.cargo-tabs button:focus-visible{outline:3px solid #f7b4ff;outline-offset:4px}
+.truck-selector,.truck-information,.freight-item,.freight-totals{border-color:#a36cba55}
+.truck-details,.route-step,.freight-editor{background:linear-gradient(145deg,#482054,#2b143b);border-color:#a165b65c;box-shadow:none;color:#f5e6ff}
+.truck-information dt,.configuration-heading p,.route-step-heading p,.truck-options-note,.freight-totals p,.calc-fields label,.city-field>label{color:#cfabd9}
+.truck-information dd,.freight-totals b,.freight-item legend{color:#fff}
+.truck-options-note{background:#240d3280;border-color:#9a56ad4d}
+.truck-information>svg{background:#79318c44;color:#ddb4f3}
+.cargo-tabs{background:#210d30;border:1px solid #88449a66}
+.calc-fields>.vehicle{border-color:#a36cba55;color:#e2c2ef}
+.freight-step-heading{display:flex;align-items:center;gap:12px;margin-bottom:22px}.freight-step-heading h3{margin:0;font-size:16px}.freight-step-heading p{margin:5px 0 0;font-size:10px}
+.step-badge,.estimate-heading .step-badge{width:34px;height:34px;border-radius:11px;background:linear-gradient(145deg,#9e36d9,#60218e);border:1px solid #e4a1ff66;color:#fff;font-size:11px;font-weight:800;letter-spacing:1px;box-shadow:inset 0 1px 0 #ffffff29,0 4px 12px #18032435}
+.numbered-eyebrow{display:flex;align-items:center;gap:12px}.numbered-eyebrow .step-badge{letter-spacing:1px}
+.cargo-number{display:inline-grid;place-items:center;width:27px;height:27px;border-radius:8px;margin-right:7px;background:#a43bcf33;border:1px solid #ce7bea66;font-size:10px;color:#f8deff}
+.freight-editor>h3{color:#fff}.freight-item legend{font-size:12px}.freight-controls .remove-freight{color:#edb2d4}.freight-controls .remove-freight:disabled{color:#a67b9f}
+.toggle-label input:checked{background:#bd26e9;box-shadow:0 0 13px #d72bfa70}.toggle-label input:not(:checked){box-shadow:none;background:#65416f}
+@media(max-width:430px){.freight-step-heading h3{font-size:14px}.step-badge{width:31px;height:31px}.freight-step-heading{gap:10px}}
+@media(prefers-reduced-motion:reduce){.delivery-choice,.truck-card,.truck-option-column button,.cargo-tabs button{transition:none}}
+.freight-editor .add-freight,.freight-editor .unit-switch button{background:linear-gradient(140deg,#592367,#35163f);border:1px solid #a76abd;color:#edd5f8;box-shadow:none}.freight-editor .unit-switch button[aria-pressed=true]{background:linear-gradient(125deg,#9917da,#c52ee0);border-color:#ef9aff;color:#fff;box-shadow:0 0 14px #d52bfc60}.freight-editor .add-freight:hover{background:#79328c;border-color:#e3a0fa}.truck-card small{color:#ceacd9}.truck-card.chosen small{color:#fff;opacity:.9}
