@@ -65,3 +65,5 @@ html{background:#180c2d}body{background:#1b0e31;color:#eee6fa;isolation:isolate}
 @media(max-width:430px){.freight-step-heading h3{font-size:14px}.step-badge{width:31px;height:31px}.freight-step-heading{gap:10px}}
 @media(prefers-reduced-motion:reduce){.delivery-choice,.truck-card,.truck-option-column button,.cargo-tabs button{transition:none}}
 .freight-editor .add-freight,.freight-editor .unit-switch button{background:linear-gradient(140deg,#592367,#35163f);border:1px solid #a76abd;color:#edd5f8;box-shadow:none}.freight-editor .unit-switch button[aria-pressed=true]{background:linear-gradient(125deg,#9917da,#c52ee0);border-color:#ef9aff;color:#fff;box-shadow:0 0 14px #d52bfc60}.freight-editor .add-freight:hover{background:#79328c;border-color:#e3a0fa}.truck-card small{color:#ceacd9}.truck-card.chosen small{color:#fff;opacity:.9}
+/* Keep numeric validation while hiding native increment/decrement controls. */
+input[type="number"]{-moz-appearance:textfield;appearance:textfield}input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
