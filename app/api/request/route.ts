@@ -1,5 +1,6 @@
 export const runtime = 'nodejs';
 import {calculate} from '../../pricing';
+import {vehicles} from '../../vehicles';
 export async function POST(req:Request){
  const json=(message:string,status=400)=>Response.json({message},{status});
  if(req.headers.get('origin')!==new URL(req.url).origin)return json('Недопустимый источник запроса.',403);
@@ -9,12 +10,13 @@ export async function POST(req:Request){
  for(const k of ['name','phone','email','from','to','date'])if(typeof d[k]!=='string'||!d[k].trim()||d[k].length>150)return json('Заполните обязательные поля.');
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.email)||!/^[-+()\d\s]{6,30}$/.test(d.phone)||!/^\d{4}-\d{2}-\d{2}$/.test(d.date)||d.consent!=='on')return json('Проверьте телефон, почту, дату и согласие.');
  if(typeof d.comment!=='string'||d.comment.length>2000)return json('Проверьте описание груза.');
- if(!Number.isFinite(d.km)||d.km<=0||d.km>15000||!Number.isFinite(d.weight)||d.weight<=0||d.weight>2000||!Number.isFinite(d.volume)||d.volume<=0||d.volume>10)return json('Груз должен быть до 2 тонн и 10 м³. Проверьте расстояние.');
+ const selectedVehicle=vehicles.find(v=>v.id===d.vehicleId);if(!selectedVehicle)return json('Выберите машину из списка.');
+ if(!Number.isFinite(d.km)||d.km<=0||d.km>15000||!Number.isFinite(d.weight)||d.weight<=0||d.weight>selectedVehicle.weight||!Number.isFinite(d.volume)||d.volume<=0||d.volume>(selectedVehicle.volume??200))return json('Проверьте расстояние и параметры груза для выбранной машины.');
  const config=process.env;
  if(!config.RESEND_API_KEY||!config.ORDER_EMAIL||!config.MAIL_FROM)return json('Отправка заявок пока не подключена. Для приема заявок компании необходимо подключить почту.',503);
  if(typeof d.cargo!=='string'||!['Грузоперевозка','Переезд','Для бизнеса'].includes(d.cargo))return json('Выберите тип перевозки.');
  const result=calculate(d.km,d.from,d.to),id=crypto.randomUUID().slice(0,8).toUpperCase();
- const text=`Заявка Дюна №${id}\nТип: ${d.cargo}\nИмя: ${d.name}\nТелефон: ${d.phone}\nEmail: ${d.email}\nМаршрут: ${d.from} → ${d.to}\nРасстояние: ${d.km} км\nВес: ${d.weight} кг\nОбъем: ${d.volume} м³\nДата: ${d.date}\nОсновная стоимость: ${result.base} ₽\nСкидка: ${result.discount?'30%':'нет'}\nПредварительная стоимость: ${result.total} ₽\nКомментарий: ${d.comment}`;
+ const text=`Заявка Дюна №${id}\nМашина: ${selectedVehicle.name}\nТип: ${d.cargo}\nИмя: ${d.name}\nТелефон: ${d.phone}\nEmail: ${d.email}\nМаршрут: ${d.from} → ${d.to}\nРасстояние: ${d.km} км\nВес: ${d.weight} кг\nОбъем: ${d.volume} м³\nДата: ${d.date}\n${selectedVehicle.priced?`Основная стоимость: ${result.base} ₽\nСкидка: ${result.discount?'30%':'нет'}\nПредварительная стоимость: ${result.total} ₽`:'Стоимость: по согласованию. Наличие и параметры транспорта требуют подтверждения.'}\nКомментарий: ${d.comment}`;
  try{const r=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${config.RESEND_API_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({from:config.MAIL_FROM,to:[config.ORDER_EMAIL],reply_to:d.email,subject:`Дюна: новая заявка №${id}`,text})});if(!r.ok)return json('Почтовый сервис не подтвердил отправку. Попробуйте позднее.',502);return json(`Заявка №${id} отправлена. Мы свяжемся с вами для согласования перевозки.`,200)}catch{return json('Не удалось отправить заявку. Попробуйте позднее.',502)}
 }
 
