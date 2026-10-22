@@ -2,6 +2,7 @@ export const runtime = 'nodejs';
 import {calculate} from '../../pricing';
 import {vehicles,trucks} from '../../vehicles';
 import {freightTotals,type FreightItem} from '../../freight';
+import {validTruckOptions,truckOptionLines} from '../../truck-options';
 export async function POST(req:Request){
  const json=(message:string,status=400)=>Response.json({message},{status});
  if(req.headers.get('origin')!==new URL(req.url).origin)return json('Недопустимый источник запроса.',403);
@@ -14,7 +15,8 @@ export async function POST(req:Request){
  const selectedVehicle=vehicles.find(v=>v.id===d.vehicleId);if(!selectedVehicle)return json('Выберите вариант перевозки.');
  const groupage=d.vehicleId==='groupage';
  const truck=groupage?undefined:trucks.find(t=>t.id===d.truckId);if(!groupage&&!truck)return json('Выберите машину.');
- let itemText='';
+ if(!groupage&&!validTruckOptions(d.truckOptions))return json('Проверьте тип кузова и параметры погрузки.');
+ let itemText=groupage?'':truckOptionLines(d.truckOptions).join('\n');
  if(groupage){if(!Array.isArray(d.items)||d.items.length<1||d.items.length>30||d.items.some((i:unknown)=>!i||typeof i!=='object'||['length','width','height','weight','quantity','unit'].some(k=>typeof (i as Record<string,unknown>)[k]!=='string')))return json('Проверьте грузовые места.');const totals=freightTotals(d.items as FreightItem[]);if(!totals.valid)return json('Проверьте параметры грузовых мест.');d.weight=totals.weight;d.volume=totals.volume;itemText=d.items.map((i:FreightItem,index:number)=>'Груз '+(index+1)+': '+i.length+' × '+i.width+' × '+i.height+' см; вес одного места '+i.weight+' '+i.unit+'; количество '+i.quantity+'; вращать: '+(i.rotate?'да':'нет')+'; штабелировать: '+(i.stack?'да':'нет')).join('\n');}
  const priced=!groupage&&selectedVehicle.priced&&Boolean(truck?.priced);
  if(!Number.isFinite(d.km)||d.km<=0||d.km>15000||!Number.isFinite(d.weight)||d.weight<=0||d.weight>(truck?.weight??20000)||!Number.isFinite(d.volume)||d.volume<=0||d.volume>(truck?.volume??115))return json('Проверьте расстояние и параметры груза.');
