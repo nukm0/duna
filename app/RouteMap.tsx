@@ -1,6 +1,7 @@
 "use client";
 import {useEffect,useRef,useState} from 'react';
 import type {Coordinates,MapSelection,MapTarget} from './stops';
+import {mapDistanceKm} from './map-distance';
 type MapEvent={get:(name:string)=>unknown};
 type Events={add:(event:string,callback:(event:MapEvent)=>void)=>void};
 type ActiveRoute={properties:{get:(name:string)=>{value:number;text:string}|undefined}};
@@ -13,7 +14,7 @@ const targetKey=(target:MapTarget|MapSelection)=>target.kind+':'+target.index;
 const escapeMarkup=(value:string)=>value.replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]!));
 async function withTimeout<T>(value:PromiseLike<T>){let timer:ReturnType<typeof setTimeout>|undefined;try{return await Promise.race([Promise.resolve(value),new Promise<never>((_,reject)=>{timer=setTimeout(()=>reject(Error('Геокодер не ответил.')),10000)})]);}finally{if(timer)clearTimeout(timer);}}
 let apiPromise:Promise<YMaps>|null=null;
-function loadMaps():Promise<YMaps>{if(apiPromise)return apiPromise;apiPromise=(async()=>{const response=await fetch('/api/map-config');if(!response.ok)throw Error('Ключ Яндекс Карт пока не настроен.');const config=await response.json() as {apiKey:string};await new Promise<void>((resolve,reject)=>{if(window.ymaps){window.ymaps.ready(resolve);return;}const script=document.createElement('script');script.src='https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey='+encodeURIComponent(config.apiKey);script.async=true;const timer=setTimeout(()=>reject(Error('Яндекс Карты не ответили. Обновите страницу или введите километраж вручную.')),20000);script.onload=()=>{if(!window.ymaps){clearTimeout(timer);reject(Error('Не удалось загрузить Яндекс Карты. Проверьте доступ API для домена сайта.'));return;}window.ymaps.ready(()=>{clearTimeout(timer);resolve()})};script.onerror=()=>{clearTimeout(timer);script.remove();reject(Error('Не удалось загрузить Яндекс Карты. Проверьте соединение.'))};document.head.appendChild(script)});return window.ymaps!;})().catch(e=>{apiPromise=null;throw e});return apiPromise;}
+function loadMaps():Promise<YMaps>{if(apiPromise)return apiPromise;apiPromise=(async()=>{const response=await fetch('/api/map-config');if(!response.ok)throw Error('Ключ Яндекс Карт пока не настроен.');const config=await response.json() as {apiKey:string};await new Promise<void>((resolve,reject)=>{if(window.ymaps){window.ymaps.ready(resolve);return;}const script=document.createElement('script');script.src='https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey='+encodeURIComponent(config.apiKey);script.async=true;const timer=setTimeout(()=>reject(Error('Яндекс Карты не ответили. Обновите страницу и постройте маршрут повторно.')),20000);script.onload=()=>{if(!window.ymaps){clearTimeout(timer);reject(Error('Не удалось загрузить Яндекс Карты. Проверьте доступ API для домена сайта.'));return;}window.ymaps.ready(()=>{clearTimeout(timer);resolve()})};script.onerror=()=>{clearTimeout(timer);script.remove();reject(Error('Не удалось загрузить Яндекс Карты. Проверьте соединение.'))};document.head.appendChild(script)});return window.ymaps!;})().catch(e=>{apiPromise=null;throw e});return apiPromise;}
 type Props={from:string;to:string;points:(string|Coordinates)[];targets:MapTarget[];selections:MapSelection[];onPick:(selection:MapSelection,city?:string)=>void;onDistance:(km:string)=>void};
 export default function RouteMap({from,to,points,targets,selections,onPick,onDistance}:Props){
  const pointsKey=JSON.stringify(points),selectionsKey=JSON.stringify(selections);
@@ -46,7 +47,7 @@ export default function RouteMap({from,to,points,targets,selections,onPick,onDis
   }).catch(e=>{if(!stopped)setError(e instanceof Error?e.message:'Не удалось загрузить карту.');});
   return()=>{stopped=true;sequence.current++;pickSequence.current++;if(timer.current)clearTimeout(timer.current);map.current?.destroy();map.current=null;};
  },[]);
- useEffect(()=>{sequence.current++;if(timer.current)clearTimeout(timer.current);if(route.current&&map.current)map.current.geoObjects.remove(route.current);route.current=null;setKm(null);setBusy(false);},[from,to,pointsKey]);
+ useEffect(()=>{sequence.current++;if(timer.current)clearTimeout(timer.current);if(route.current&&map.current)map.current.geoObjects.remove(route.current);route.current=null;setKm(null);latest.current.onDistance('');setBusy(false);},[from,to,pointsKey]);
  useEffect(()=>{
   if(!selectedTarget||targets.some(t=>targetKey(t)===selectedTarget))return;
   pickSequence.current++;latest.current.selectedTarget=null;setSelectedTarget(null);setPicking(false);setPickStatus('Точка удалена из маршрута.');
@@ -77,10 +78,10 @@ export default function RouteMap({from,to,points,targets,selections,onPick,onDis
  function build(){
   if(!map.current||!api.current)return;
   cancelPick(false);const requestId=++sequence.current;if(timer.current)clearTimeout(timer.current);if(route.current)map.current.geoObjects.remove(route.current);
-  setBusy(true);setError('');setKm(null);
+  setBusy(true);setError('');setKm(null);latest.current.onDistance('');
   const current=new api.current.multiRouter.MultiRoute({referencePoints:points,params:{routingMode:'auto',results:1,avoidTrafficJams:false}},{boundsAutoApply:true,routeActiveStrokeColor:'#a326e2',routeActiveStrokeWidth:5,wayPointStartIconFillColor:'#8746ca',wayPointFinishIconFillColor:'#8746ca'});route.current=current;
-  const fail=()=>{if(requestId!==sequence.current)return;if(timer.current)clearTimeout(timer.current);setBusy(false);setError('Не удалось построить маршрут Яндекс Карт. Проверьте адреса или введите километраж вручную.');};
-  const update=()=>{if(requestId!==sequence.current)return;const distance=current.getActiveRoute()?.properties.get('distance')?.value;if(!Number.isFinite(distance)||!distance||distance<=0){fail();return;}if(timer.current)clearTimeout(timer.current);const value=Math.ceil(distance/1000);setKm(value);latest.current.onDistance(String(value));setBusy(false);setError('');};
+  const fail=()=>{if(requestId!==sequence.current)return;if(timer.current)clearTimeout(timer.current);setBusy(false);latest.current.onDistance('');setError('Не удалось построить маршрут Яндекс Карт. Проверьте адреса и постройте маршрут повторно.');};
+  const update=()=>{if(requestId!==sequence.current)return;const distance=current.getActiveRoute()?.properties.get('distance')?.value;if(!Number.isFinite(distance)||!distance||distance<=0){fail();return;}if(timer.current)clearTimeout(timer.current);const value=mapDistanceKm(distance);setKm(value);latest.current.onDistance(String(value));setBusy(false);setError('');};
   current.model.events.add('requestsuccess',update);current.model.events.add('requestfail',fail);current.events.add('activeroutechange',update);timer.current=setTimeout(fail,25000);map.current.geoObjects.add(current);
  }
  return <div className="route-map-panel">
@@ -91,6 +92,6 @@ export default function RouteMap({from,to,points,targets,selections,onPick,onDis
   <button type="button" className="button sand route-build" disabled={!ready||busy||picking||!from.trim()||!to.trim()} onClick={build}>{!ready?'Загружаем Яндекс Карты…':busy?'Строим маршрут…':'Построить маршрут и рассчитать км'} <span>↗</span></button>
   {km!==null&&<div className="route-result" role="status"><b>{km.toLocaleString('ru-RU')} км</b><span>{from} → {to} · {points.length} точки · Яндекс Карты</span></div>}
   {error&&<p role="alert" className="map-error">{error}</p>}
-  <p className="hint">Приближайте карту кнопками + / −, колёсиком мыши или двумя пальцами. Для выбора адреса нажмите «Погрузка» или «Выгрузка», затем на карту. Километраж рассчитывается по всем точкам маршрута. Проверьте ограничения для выбранного грузовика.</p>
+  <p className="hint">Приближайте карту кнопками + / −, колёсиком мыши или двумя пальцами. Для выбора адреса нажмите «Погрузка» или «Выгрузка», затем на карту. Километраж берётся только из автомобильного маршрута Яндекс Карт по всем точкам. Проверьте ограничения для выбранного грузовика.</p>
  </div>;
 }
