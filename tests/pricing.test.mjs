@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {calculate} from '../app/pricing.ts';
+import {trucks} from '../app/vehicles.ts';
+const quote=(km,rate=54,min=3000)=>calculate(km,'Казань','Тула',rate,min);
+test('2 t example uses 185% addition to the complete distance cost',()=>{assert.equal(quote(40).base,6156);assert.equal(quote(40).surcharge,185);assert.equal(quote(40).baseRate,54)});
+test('distance bands include upper boundary without cumulative percentages',()=>{for(const [km,percent] of [[10,185],[40,185],[40.1,100],[100,100],[100.1,30],[150,30],[150.1,20],[300,20],[300.1,0],[301,0]]){const r=quote(km);assert.equal(r.surcharge,percent);assert.equal(r.base,Math.max(3000,Math.round(km*54*(1+percent/100))))}});
+test('all provided truck rates calculate automatically',()=>{for(const [id,rate] of [['duna-2t',54],['truck-3t',70],['truck-5t',94],['truck-10t',130],['truck-15t',150],['semi-92',160],['semi-115',160]]){const t=trucks.find(t=>t.id===id);assert.equal(t.baseRate,rate);assert.equal(t.priced,true);assert.equal(quote(40,rate,id==='duna-2t'?3000:0).base,Math.round(40*rate*2.85))}});
+test('minimum applies only when configured',()=>{assert.equal(quote(5).base,3000);assert.equal(quote(5,70,0).base,998)});
+test('existing directional discount is applied after markup and minimum',()=>{const r=calculate(40,'Мурманск, Россия','СПб',54,3000);assert.equal(r.base,6156);assert.equal(r.total,4309);assert.equal(calculate(40,'СПб','Мурманск',54,3000).discount,false)});
+test('1.5 t remains unpriced until a base rate is supplied',()=>assert.equal(trucks.find(t=>t.id==='van-15t').priced,false));
