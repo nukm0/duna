@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {calculate} from '../app/pricing.ts';
 import {trucks} from '../app/vehicles.ts';
-import {validStops,extraPointCount,routePoints} from '../app/stops.ts';
+import {validStops,extraPointCount,routePoints,validMapSelections,mapSelectionLines} from '../app/stops.ts';
 import {freightTotals,newFreightItem} from '../app/freight.ts';
 test('40 km for 2 t is 6156 with no discount',()=>{const q=calculate(40);assert.equal(q.base,6156);assert.equal(q.total,6156)});
 test('exactly 3000 through 10 km for every truck',()=>{for(const t of trucks)for(const km of [0.1,5,10])assert.equal(calculate(km,t.baseRate).total,3000);assert.equal(calculate(10.1,54).total,1554)});
@@ -11,3 +11,7 @@ test('all base rates and extra stop fees match supplied table',()=>{for(const [w
 test('at most two stops per side and every supplied address required',()=>{assert.equal(validStops({loading:['A'],unloading:['B']}),true);assert.equal(validStops({loading:['A','C'],unloading:['B','D']}),true);for(const s of [{loading:[],unloading:['B']},{loading:['A',''],unloading:['B']},{loading:['A','B','C'],unloading:['D']},{loading:['A'],unloading:['B','C','D']}])assert.equal(validStops(s),false)});
 test('only added stops charged and map uses all stops in order',()=>{const s={loading:['ул. 1','ул. 2'],unloading:['ул. 3','ул. 4']};assert.equal(extraPointCount(s),2);assert.deepEqual(routePoints('Москва','Тверь',s),['Москва, ул. 1','Москва, ул. 2','Тверь, ул. 3','Тверь, ул. 4']);assert.equal(extraPointCount({loading:['A'],unloading:['B']}),0)});
 test('freight accepts kg and tonnes but rejects grams',()=>{const item=newFreightItem('1');assert.equal(freightTotals([item]).weight,500);assert.equal(freightTotals([{...item,weight:'0.5',unit:'t'}]).weight,500);assert.equal(freightTotals([{...item,unit:'g'}]).valid,false)});
+
+test('map selections preserve exact coordinates and typed edits discard them',()=>{const stops={loading:['Выбранный адрес'],unloading:['B']};const selection={kind:'loading',index:0,address:'Выбранный адрес',coordinates:[68.97,33.07]};assert.deepEqual(routePoints('Мурманск','Тверь',stops,[selection]),[[68.97,33.07],'Тверь, B']);assert.deepEqual(routePoints('Мурманск','Тверь',{...stops,loading:['Новый адрес']},[selection]),['Мурманск, Новый адрес','Тверь, B']);});
+
+test('map coordinates must match an existing address and stay in geographic bounds',()=>{const stops={loading:['A'],unloading:['B']},pick={kind:'loading',index:0,address:'A',coordinates:[68.97,33.07]};assert.equal(validMapSelections([pick],stops),true);assert.equal(validMapSelections([],stops),true);for(const bad of [{...pick,coordinates:[91,33]},{...pick,coordinates:[68,181]},{...pick,coordinates:[68]},{...pick,address:'Other'},{...pick,kind:'other'},{...pick,index:2}])assert.equal(validMapSelections([bad],stops),false);assert.equal(validMapSelections([pick,pick],stops),false);assert.match(mapSelectionLines([pick])[0],/68.970000, 33.070000/);});
