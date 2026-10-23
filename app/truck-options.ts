@@ -1,4 +1,4 @@
-export const bodyTypes=['Тент','Реф','Изотерм'] as const;
+export const bodyTypes=['Тент','Фургон','Борт'] as const;
 export const loadingTypes=['Зад','Зад/бок','Зад/верх','Зад/верх/бок'] as const;
 export type TruckOptions={body:typeof bodyTypes[number];loading:typeof loadingTypes[number];belts:boolean;hydrolift:boolean};
 export const defaultTruckOptions:TruckOptions={body:'Тент',loading:'Зад',belts:false,hydrolift:false};
