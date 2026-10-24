@@ -20,6 +20,7 @@ export default function RouteMap({from,to,points,targets,selections,onPick,onDis
  const pointsKey=JSON.stringify(points),selectionsKey=JSON.stringify(selections);
  const node=useRef<HTMLDivElement>(null),map=useRef<YMap|null>(null),api=useRef<YMaps|null>(null),route=useRef<MultiRoute|null>(null),markers=useRef<unknown[]>([]);
  const sequence=useRef(0),pickSequence=useRef(0),timer=useRef<ReturnType<typeof setTimeout>|null>(null);
+ const [expanded,setExpanded]=useState(false);
  const [ready,setReady]=useState(false),[busy,setBusy]=useState(false),[km,setKm]=useState<number|null>(null),[error,setError]=useState('');
  const [selectedTarget,setSelectedTarget]=useState<string|null>(null),[picking,setPicking]=useState(false),[pickStatus,setPickStatus]=useState('');
  const latest=useRef({targets,from,to,onPick,onDistance,selectedTarget});latest.current={targets,from,to,onPick,onDistance,selectedTarget};
@@ -41,7 +42,7 @@ export default function RouteMap({from,to,points,targets,selections,onPick,onDis
     catch{/* Coordinates still preserve the exact selected location. */}
     if(stopped||requestId!==pickSequence.current||!latest.current.targets.some(t=>targetKey(t)===targetKey(target)))return;
     latest.current.onPick({kind:target.kind,index:target.index,address:address.slice(0,250),coordinates},city);
-    latest.current.selectedTarget=null;setSelectedTarget(null);setPicking(false);setPickStatus(target.label+': '+address+'. Точка сохранена. Постройте маршрут для пересчёта километража.');
+    latest.current.selectedTarget=null;setSelectedTarget(null);setPicking(false);setPickStatus(target.label+': '+address+'. Точка сохранена. Нажмите «Рассчитать стоимость».');
    });
    setReady(true);
   }).catch(e=>{if(!stopped)setError(e instanceof Error?e.message:'Не удалось загрузить карту.');});
@@ -84,14 +85,16 @@ export default function RouteMap({from,to,points,targets,selections,onPick,onDis
   const update=()=>{if(requestId!==sequence.current)return;const distance=current.getActiveRoute()?.properties.get('distance')?.value;if(!Number.isFinite(distance)||!distance||distance<=0){fail();return;}if(timer.current)clearTimeout(timer.current);const value=mapDistanceKm(distance);setKm(value);latest.current.onDistance(String(value));setBusy(false);setError('');};
   current.model.events.add('requestsuccess',update);current.model.events.add('requestfail',fail);current.events.add('activeroutechange',update);timer.current=setTimeout(fail,25000);map.current.geoObjects.add(current);
  }
- return <div className="route-map-panel">
+ return <div className="route-map-panel simple-route-panel">
+  <button type="button" className="button sand route-build" disabled={!ready||busy||picking||!from.trim()||!to.trim()} onClick={build}>{!ready?'Подготавливаем расчёт…':busy?'Рассчитываем стоимость…':'Рассчитать стоимость'} <span>→</span></button>
+  {error&&<p role="alert" className="map-error">{error}</p>}
+  <button className="map-disclosure" type="button" aria-expanded={expanded} aria-controls="route-map-details" onClick={()=>{if(expanded)cancelPick(false);setExpanded(!expanded)}}>{expanded?'Скрыть карту':'Уточнить точки на карте'}<span aria-hidden="true">{expanded?'−':'＋'}</span></button>
+  <div id="route-map-details" className={expanded?'map-details expanded':'map-details'} aria-hidden={!expanded} inert={!expanded}>
   <div className="map-picker-toolbar"><div className="map-picker-title"><b>Выберите адрес на карте</b><span>Нажмите на нужную точку ниже, затем укажите место на карте.</span></div><div className="map-targets" role="group" aria-label="Выбор точки маршрута">{targets.map(target=><button type="button" key={targetKey(target)} aria-label={'Выбрать '+(target.kind==='loading'?'погрузку ':'выгрузку ')+(target.index+1)+' на карте'} aria-pressed={selectedTarget===targetKey(target)} disabled={!ready||busy} onClick={()=>chooseTarget(target)}>{target.label}<span aria-hidden="true">⌖</span></button>)}</div><div className="map-zoom-controls"><span>Масштаб карты</span><button type="button" aria-label="Отдалить карту" disabled={!ready} onClick={()=>zoom(-1)}>−</button><button type="button" aria-label="Приблизить карту" disabled={!ready} onClick={()=>zoom(1)}>＋</button></div></div>
   {selectedTarget&&<div className="map-pick-instruction"><span>{picking?'Определяем адрес…':'Нажмите на карту — здесь будет выбранная точка'}</span><button type="button" onClick={()=>cancelPick()}>Отмена</button></div>}
   <div className={selectedTarget?'route-map yandex-map is-picking':'route-map yandex-map'} ref={node} aria-label="Яндекс Карта автомобильного маршрута"/>
   {pickStatus&&<p className="map-pick-status" role="status">{pickStatus}</p>}
-  <button type="button" className="button sand route-build" disabled={!ready||busy||picking||!from.trim()||!to.trim()} onClick={build}>{!ready?'Загружаем Яндекс Карты…':busy?'Строим маршрут…':'Построить маршрут и рассчитать км'} <span>↗</span></button>
-  {km!==null&&<div className="route-result" role="status"><b>{km.toLocaleString('ru-RU')} км</b><span>{from} → {to} · {points.length} точки · Яндекс Карты</span></div>}
-  {error&&<p role="alert" className="map-error">{error}</p>}
-  <p className="hint">Приближайте карту кнопками + / −, колёсиком мыши или двумя пальцами. Для выбора адреса нажмите «Погрузка» или «Выгрузка», затем на карту. Километраж берётся только из автомобильного маршрута Яндекс Карт по всем точкам. Проверьте ограничения для выбранного грузовика.</p>
+  <p className="hint">Выберите «Погрузку» или «Выгрузку», затем нажмите нужное место на карте. Масштаб можно менять кнопками + / −.</p>
+  </div>
  </div>;
 }
